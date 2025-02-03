@@ -8,7 +8,7 @@ class BankAccount {
 
     public synchronized void deposit(double amount, String threadName) {
         balance += amount;
-        System.out.println(threadName + " deposited " + amount + ". Current balance: " + balance);
+        System.out.println(threadName + " deposited " + amount + ". Current balance: " + Math.round(balance * 100.0) / 100.0);
         notifyAll();
     }
 
@@ -25,7 +25,13 @@ class BankAccount {
         }
 
         balance -= amount;
-        System.out.println(threadName + " successfully withdrew " + amount + ". Current balance: " + balance);
+        System.out.println(threadName + " successfully withdrew " + amount + ". Current balance: " + Math.round(balance * 100.0) / 100.0);
+    }
+
+    public synchronized void addInterest(double rate) {
+        double interest = balance * rate;
+        balance += interest;
+        System.out.println("Interest added: " + Math.round(interest * 100.0) / 100.0 + ". Current balance: " + Math.round(balance * 100.0) / 100.0);
     }
 }
 
@@ -75,6 +81,26 @@ class DepositThread extends Thread {
     }
 }
 
+class InterestThread extends Thread {
+    private BankAccount account;
+
+    public InterestThread(BankAccount account) {
+        this.account = account;
+    }
+
+    @Override
+    public void run() {
+        try {
+            while (true) {
+                account.addInterest(0.02);
+                Thread.sleep(5000);
+            }
+        } catch (InterruptedException e) {
+            System.out.println("InterestThread interrupted.");
+        }
+    }
+}
+
 
 public class Main {
     public static void main(String[] args) {
@@ -83,11 +109,13 @@ public class Main {
         Thread Thread1 = new DepositThread(account, 300, "Thread-1");
         Thread Thread2 = new WithdrawalThread(account, 200, "Thread-2");
         Thread Thread3 = new WithdrawalThread(account, 500, "Thread-3");
+        Thread interestThread = new InterestThread(account);
 
 
         Thread1.start();
         Thread2.start();
         Thread3.start();
+        interestThread.start();
 
     }
 }
